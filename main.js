@@ -3,7 +3,7 @@ import { QUESTIONS } from "./questions.js";
 import { clearParticles, updateParticles } from "./effects.js";
 import { createGameplay } from "./gameplay.js";
 import { createCityScenery } from "./scenery.js";
-import { UI_STATES, initUI, saveLeaderboardScore, setPlayerProfile, setQuestion, setUIState, showGameOver, updateHud } from "./ui.js";
+import { UI_STATES, initUI, saveLeaderboardScore, setPlayerProfile, setQuestion, setUIState, showAnswerFeedback, showGameOver, updateHud } from "./ui.js";
 import { createPlayer } from "./player.js";
 import { createEnvironment } from "./world.js";
 
@@ -67,6 +67,7 @@ const gameplay = createGameplay({
   questions: QUESTIONS,
   gameState,
   onHudUpdate: syncHud,
+  onAnswerFeedback: showAnswerFeedback,
   onGameOver: () => {
     scenery.clear();
     showGameOver(gameState.score, gameState.questionResults);

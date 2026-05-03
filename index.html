@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ТМО Runner</title>
+    <title>tmo-runner</title>
     <link rel="icon" href="data:," />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -42,6 +42,29 @@
         -webkit-user-select: text;
         user-select: text;
       }
+
+      .feedback-curtain {
+        transform: translate(-50%, -125%);
+        opacity: 0;
+        transition: transform 260ms cubic-bezier(0.2, 0.9, 0.25, 1.2), opacity 180ms ease;
+      }
+
+      .feedback-curtain.is-visible {
+        transform: translate(-50%, 1rem);
+        opacity: 1;
+      }
+
+      .feedback-curtain.correct {
+        background: linear-gradient(135deg, rgba(5, 150, 105, 0.98), rgba(34, 197, 94, 0.98));
+        border-color: rgba(187, 247, 208, 0.95);
+        box-shadow: 0 18px 45px rgba(21, 128, 61, 0.35);
+      }
+
+      .feedback-curtain.wrong {
+        background: linear-gradient(135deg, rgba(185, 28, 28, 0.98), rgba(239, 68, 68, 0.98));
+        border-color: rgba(254, 202, 202, 0.95);
+        box-shadow: 0 18px 45px rgba(185, 28, 28, 0.35);
+      }
     </style>
     <script type="importmap">
       {
@@ -57,6 +80,16 @@
       <div id="canvas-root" class="absolute inset-0 z-0"></div>
 
       <div id="ui-root" class="pointer-events-none absolute inset-0 z-10">
+        <div
+          id="answer-feedback-curtain"
+          class="feedback-curtain pointer-events-none absolute left-1/2 top-0 z-50 rounded-b-2xl border-4 px-8 py-4 text-center"
+          aria-live="polite"
+        >
+          <span id="answer-feedback-text" class="font-game text-2xl text-white drop-shadow sm:text-4xl">
+            Правильно!
+          </span>
+        </div>
+
         <section
           id="start-screen"
           class="pointer-events-auto absolute inset-0 flex items-center justify-center overflow-y-auto bg-blue-950/82 px-4 py-6 backdrop-blur-sm sm:px-6"
@@ -67,7 +100,7 @@
                 Exam Prep Runner
               </p>
               <h1 class="font-game text-5xl leading-tight text-blue-50 drop-shadow-lg sm:text-7xl">
-                ТМО Runner
+                tmo-runner
               </h1>
               <p class="mt-5 max-w-xl text-lg font-semibold leading-8 text-blue-100 drop-shadow lg:mx-0">
                 Выбирай правильный ответ на трех дорожках и готовься к экзамену по теории международных отношений.

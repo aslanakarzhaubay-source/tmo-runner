@@ -15,6 +15,7 @@ const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 const elements = {};
 let fallbackScores = [];
 let avatarObjectUrl = "";
+let feedbackTimer = 0;
 let activeProfile = {
   name: DEFAULT_PLAYER_NAME,
   avatarUrl: ""
@@ -35,6 +36,8 @@ function cacheElements() {
   elements.hud = requireElement("hud");
   elements.pauseScreen = requireElement("pause-screen");
   elements.gameOverScreen = requireElement("game-over-screen");
+  elements.answerFeedbackCurtain = requireElement("answer-feedback-curtain");
+  elements.answerFeedbackText = requireElement("answer-feedback-text");
   elements.startButton = requireElement("start-button");
   elements.pauseButton = requireElement("pause-button");
   elements.resumeButton = requireElement("resume-button");
@@ -377,6 +380,22 @@ export function updateHud({ score, lives }) {
 
 export function setQuestion(questionText) {
   elements.questionText.textContent = questionText || "Вопрос не загружен.";
+}
+
+export function showAnswerFeedback(isCorrect) {
+  window.clearTimeout(feedbackTimer);
+
+  elements.answerFeedbackText.textContent = isCorrect ? "Правильно!" : "Неправильно!";
+  elements.answerFeedbackCurtain.classList.toggle("correct", isCorrect);
+  elements.answerFeedbackCurtain.classList.toggle("wrong", !isCorrect);
+  elements.answerFeedbackCurtain.classList.remove("is-visible");
+
+  void elements.answerFeedbackCurtain.offsetWidth;
+  elements.answerFeedbackCurtain.classList.add("is-visible");
+
+  feedbackTimer = window.setTimeout(() => {
+    elements.answerFeedbackCurtain.classList.remove("is-visible");
+  }, 920);
 }
 
 export function showGameOver(finalScore, questionResults = []) {

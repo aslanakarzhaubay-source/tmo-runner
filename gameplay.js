@@ -274,27 +274,43 @@ function getBlockWorldPosition(block) {
   return position;
 }
 
-function createQuestionRow(question) {
+function pickCorrectLane(previousCorrectLane) {
+  const lanes = LANE_INDICES.filter((laneIndex) => laneIndex !== previousCorrectLane);
+  return lanes[Math.floor(Math.random() * lanes.length)];
+}
+
+function createQuestionRow(question, previousCorrectLane) {
   const group = new THREE.Group();
   group.position.z = SPAWN_Z;
   group.name = "QuestionRow";
 
-  const answers = shuffle([
-    {
-      text: question.correct_answer,
-      isCorrect: true
-    },
-    ...question.wrong_answers.map((text) => ({
-      text,
-      isCorrect: false
-    }))
+  const correctLane = pickCorrectLane(previousCorrectLane);
+  const wrongAnswers = shuffle(question.wrong_answers).map((text) => ({
+    text,
+    isCorrect: false
+  }));
+  const answersByLane = new Map([
+    [
+      correctLane,
+      {
+        text: question.correct_answer,
+        isCorrect: true
+      }
+    ]
   ]);
 
-  const blocks = LANE_INDICES.map((laneIndex, index) => {
+  LANE_INDICES
+    .filter((laneIndex) => laneIndex !== correctLane)
+    .forEach((laneIndex, index) => {
+      answersByLane.set(laneIndex, wrongAnswers[index]);
+    });
+
+  const blocks = LANE_INDICES.map((laneIndex) => {
+    const answer = answersByLane.get(laneIndex);
     const block = createAnswerBlock({
       laneIndex,
-      answer: answers[index].text,
-      isCorrect: answers[index].isCorrect
+      answer: answer.text,
+      isCorrect: answer.isCorrect
     });
 
     group.add(block.group);
@@ -304,6 +320,7 @@ function createQuestionRow(question) {
   return {
     group,
     blocks,
+    correctLane,
     previousZ: SPAWN_Z,
     wobblePhase: Math.random() * Math.PI * 2,
     resolved: false,
@@ -333,9 +350,11 @@ export function createGameplay({
   questions,
   gameState,
   onHudUpdate,
+  onAnswerFeedback = () => {},
   onGameOver
 }) {
   let activeRow = null;
+  let previousCorrectLane = null;
 
   function destroyActiveRow() {
     if (!activeRow) {
@@ -356,7 +375,8 @@ export function createGameplay({
       return;
     }
 
-    activeRow = createQuestionRow(question);
+    activeRow = createQuestionRow(question, previousCorrectLane);
+    previousCorrectLane = activeRow.correctLane;
     scene.add(activeRow.group);
   }
 
@@ -400,6 +420,7 @@ export function createGameplay({
     activeRow.resolved = true;
     activeRow.feedbackSeconds = ROW_FEEDBACK_SECONDS;
     recordQuestionResult(hitBlock);
+    onAnswerFeedback(hitBlock.isCorrect);
     spawnParticles(scene, getBlockWorldPosition(hitBlock), hitBlock.isCorrect);
 
     if (hitBlock.isCorrect) {
@@ -503,6 +524,7 @@ export function createGameplay({
     },
     reset() {
       destroyActiveRow();
+      previousCorrectLane = null;
     },
     start() {
       spawnCurrentQuestionRow();
