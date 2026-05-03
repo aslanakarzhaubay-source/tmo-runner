@@ -2,7 +2,7 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>tmo-runner</title>
     <link rel="icon" href="data:," />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -13,14 +13,33 @@
       :root {
         --game-font: "Bungee", "Arial Black", system-ui, sans-serif;
         --text-font: Inter, ui-sans-serif, system-ui, sans-serif;
+        --app-width: 100vw;
+        --app-height: 100svh;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
       }
 
       body {
+        position: fixed;
+        inset: 0;
         font-family: var(--text-font);
         overscroll-behavior: none;
         -webkit-tap-highlight-color: transparent;
         -webkit-user-select: none;
         user-select: none;
+      }
+
+      #app {
+        width: var(--app-width);
+        height: var(--app-height);
+        min-width: 0;
+        min-height: 0;
       }
 
       .font-game {
@@ -30,7 +49,35 @@
 
       #canvas-root,
       #canvas-root canvas {
+        width: 100%;
+        height: 100%;
         touch-action: none;
+      }
+
+      .mobile-scroll-screen {
+        align-items: flex-start;
+        height: 100%;
+        max-height: 100%;
+        padding-top: max(1rem, env(safe-area-inset-top));
+        padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+      }
+
+      @media (min-width: 1024px) and (min-height: 820px) {
+        .mobile-scroll-screen {
+          align-items: center;
+        }
+      }
+
+      #question-panel {
+        top: calc(max(5.75rem, env(safe-area-inset-top) + 5rem));
+      }
+
+      @media (min-width: 640px) {
+        #question-panel {
+          top: calc(max(1.5rem, env(safe-area-inset-top) + 1rem));
+        }
       }
 
       input,
@@ -44,6 +91,7 @@
       }
 
       .feedback-curtain {
+        top: env(safe-area-inset-top, 0px);
         transform: translate(-50%, -125%);
         opacity: 0;
         transition: transform 260ms cubic-bezier(0.2, 0.9, 0.25, 1.2), opacity 180ms ease;
@@ -76,7 +124,7 @@
     </script>
   </head>
   <body class="m-0 overflow-hidden bg-slate-950 text-white">
-    <main id="app" class="relative h-[100dvh] min-h-screen w-screen overflow-hidden">
+    <main id="app" class="relative overflow-hidden">
       <div id="canvas-root" class="absolute inset-0 z-0"></div>
 
       <div id="ui-root" class="pointer-events-none absolute inset-0 z-10">
@@ -92,7 +140,7 @@
 
         <section
           id="start-screen"
-          class="pointer-events-auto absolute inset-0 flex items-center justify-center overflow-y-auto bg-blue-950/82 px-4 py-6 backdrop-blur-sm sm:px-6"
+          class="mobile-scroll-screen pointer-events-auto absolute inset-0 flex justify-center overflow-y-auto bg-blue-950/82 px-4 py-6 backdrop-blur-sm sm:px-6"
         >
           <div class="grid w-[min(1080px,calc(100vw-2rem))] items-center gap-8 lg:grid-cols-[1.25fr_0.75fr]">
             <div class="text-center lg:text-left">
@@ -165,12 +213,12 @@
             <p id="score-value" class="text-2xl font-black tabular-nums text-white sm:text-3xl">0</p>
           </div>
 
-          <div class="absolute right-3 top-3 rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 shadow-lg backdrop-blur-sm sm:right-6 sm:top-6 sm:px-5 sm:py-3">
+          <div class="absolute right-3 top-3 min-w-[6.75rem] rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 shadow-lg backdrop-blur-sm sm:right-6 sm:top-6 sm:min-w-0 sm:px-5 sm:py-3">
             <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Lives</p>
-            <p id="lives-value" class="text-3xl leading-none" aria-label="3 lives">♥ ♥ ♥</p>
+            <p id="lives-value" class="whitespace-nowrap text-2xl leading-none sm:text-3xl" aria-label="3 lives">♥ ♥ ♥</p>
           </div>
 
-          <div class="absolute left-1/2 top-24 w-[min(760px,calc(100vw-1rem))] -translate-x-1/2 rounded-lg border border-cyan-300/30 bg-slate-950/78 px-4 py-3 text-center shadow-2xl shadow-cyan-950/50 backdrop-blur-md sm:top-6 sm:px-8 sm:py-4">
+          <div id="question-panel" class="absolute left-1/2 w-[min(760px,calc(100vw-1rem))] -translate-x-1/2 rounded-lg border border-cyan-300/30 bg-slate-950/78 px-4 py-3 text-center shadow-2xl shadow-cyan-950/50 backdrop-blur-md sm:px-8 sm:py-4">
             <p class="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">Current Question</p>
             <p id="question-text" class="text-balance text-base font-bold leading-6 text-white sm:text-2xl sm:leading-9">
               Вопрос появится после старта.
@@ -224,7 +272,7 @@
 
         <section
           id="game-over-screen"
-          class="pointer-events-auto absolute inset-0 hidden items-center justify-center overflow-y-auto bg-sky-500/65 px-4 py-6 backdrop-blur-sm sm:px-6"
+          class="mobile-scroll-screen pointer-events-auto absolute inset-0 hidden justify-center overflow-y-auto bg-sky-500/65 px-4 py-6 backdrop-blur-sm sm:px-6"
         >
           <div class="grid w-[min(1040px,calc(100vw-2rem))] gap-6 rounded-xl border-4 border-yellow-300 bg-slate-950/90 p-6 shadow-2xl shadow-slate-900/40 lg:grid-cols-[0.95fr_1.05fr]">
             <div class="text-center">

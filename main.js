@@ -34,11 +34,51 @@ if (!canvasRoot) {
   throw new Error("Missing #canvas-root element.");
 }
 
+function readViewportSize() {
+  const visualViewport = window.visualViewport;
+  const width = visualViewport?.width ?? window.innerWidth ?? document.documentElement.clientWidth;
+  const height = visualViewport?.height ?? window.innerHeight ?? document.documentElement.clientHeight;
+
+  return {
+    width: Math.max(1, Math.round(width)),
+    height: Math.max(1, Math.round(height))
+  };
+}
+
+function syncAppViewport() {
+  const { width, height } = readViewportSize();
+  document.documentElement.style.setProperty("--app-width", `${width}px`);
+  document.documentElement.style.setProperty("--app-height", `${height}px`);
+}
+
+function readRenderSize() {
+  const viewportSize = readViewportSize();
+  const bounds = canvasRoot.getBoundingClientRect();
+
+  return {
+    width: Math.max(1, Math.round(bounds.width || canvasRoot.clientWidth || viewportSize.width)),
+    height: Math.max(1, Math.round(bounds.height || canvasRoot.clientHeight || viewportSize.height))
+  };
+}
+
+syncAppViewport();
+const initialRenderSize = readRenderSize();
 const scene = new THREE.Scene();
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 5.2, 9.5);
-camera.lookAt(0, 0.6, -18);
+const camera = new THREE.PerspectiveCamera(60, initialRenderSize.width / initialRenderSize.height, 0.1, 1000);
+
+function applyCameraViewport({ width, height }) {
+  const aspect = width / height;
+  const isPortraitPhone = width <= 520 && aspect < 0.85;
+
+  camera.aspect = aspect;
+  camera.fov = isPortraitPhone ? 66 : 60;
+  camera.position.set(0, isPortraitPhone ? 5.75 : 5.2, isPortraitPhone ? 10.7 : 9.5);
+  camera.lookAt(0, 0.6, -18);
+  camera.updateProjectionMatrix();
+}
+
+applyCameraViewport(initialRenderSize);
 createEnvironment(scene);
 const player = createPlayer(scene);
 
@@ -48,7 +88,7 @@ const renderer = new THREE.WebGLRenderer({
 });
 
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(initialRenderSize.width, initialRenderSize.height, false);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.domElement.className = "block h-full w-full";
 renderer.domElement.style.touchAction = "none";
@@ -145,10 +185,26 @@ function togglePause() {
   }
 }
 
-function handleResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+let resizeFrame = 0;
+
+function applyViewportResize() {
+  syncAppViewport();
+  const renderSize = readRenderSize();
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(renderSize.width, renderSize.height, false);
+  applyCameraViewport(renderSize);
+}
+
+function requestViewportResize() {
+  if (resizeFrame) {
+    return;
+  }
+
+  resizeFrame = requestAnimationFrame(() => {
+    resizeFrame = 0;
+    applyViewportResize();
+  });
 }
 
 function handleControls(event) {
@@ -310,7 +366,18 @@ function renderLoop() {
   requestAnimationFrame(renderLoop);
 }
 
-window.addEventListener("resize", handleResize);
+window.addEventListener("resize", requestViewportResize);
+window.addEventListener("orientationchange", () => {
+  requestViewportResize();
+  window.setTimeout(requestViewportResize, 120);
+  window.setTimeout(requestViewportResize, 320);
+});
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", requestViewportResize);
+  window.visualViewport.addEventListener("scroll", requestViewportResize);
+}
+
 window.addEventListener("keydown", handleControls);
 createSwipeControls(renderer.domElement);
 
