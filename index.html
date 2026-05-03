@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ТМО Runner</title>
+    <link rel="icon" href="data:," />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+      :root {
+        --game-font: "Bungee", "Arial Black", system-ui, sans-serif;
+        --text-font: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+
+      body {
+        font-family: var(--text-font);
+        overscroll-behavior: none;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      .font-game {
+        font-family: var(--game-font);
+        letter-spacing: 0.03em;
+      }
+
+      #canvas-root,
+      #canvas-root canvas {
+        touch-action: none;
+      }
+
+      input,
+      button {
+        touch-action: manipulation;
+      }
+
+      input {
+        -webkit-user-select: text;
+        user-select: text;
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.183.2/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body class="m-0 overflow-hidden bg-slate-950 text-white">
+    <main id="app" class="relative h-[100dvh] min-h-screen w-screen overflow-hidden">
+      <div id="canvas-root" class="absolute inset-0 z-0"></div>
+
+      <div id="ui-root" class="pointer-events-none absolute inset-0 z-10">
+        <section
+          id="start-screen"
+          class="pointer-events-auto absolute inset-0 flex items-center justify-center overflow-y-auto bg-blue-950/82 px-4 py-6 backdrop-blur-sm sm:px-6"
+        >
+          <div class="grid w-[min(1080px,calc(100vw-2rem))] items-center gap-8 lg:grid-cols-[1.25fr_0.75fr]">
+            <div class="text-center lg:text-left">
+              <p class="font-game mb-3 text-sm uppercase tracking-[0.24em] text-cyan-200 drop-shadow">
+                Exam Prep Runner
+              </p>
+              <h1 class="font-game text-5xl leading-tight text-blue-50 drop-shadow-lg sm:text-7xl">
+                ТМО Runner
+              </h1>
+              <p class="mt-5 max-w-xl text-lg font-semibold leading-8 text-blue-100 drop-shadow lg:mx-0">
+                Выбирай правильный ответ на трех дорожках и готовься к экзамену по теории международных отношений.
+              </p>
+              <div class="mt-7 grid max-w-xl gap-4 rounded-xl border border-cyan-300/30 bg-blue-950/70 p-4 text-left shadow-xl shadow-blue-950/30">
+                <label class="block">
+                  <span class="font-game mb-2 block text-xs uppercase tracking-[0.12em] text-cyan-200">Nickname</span>
+                  <input
+                    id="start-player-name-input"
+                    type="text"
+                    maxlength="18"
+                    autocomplete="nickname"
+                    placeholder="PLAYER"
+                    class="w-full rounded-lg border-2 border-cyan-300/70 bg-blue-50 px-4 py-3 text-base font-black uppercase text-blue-950 outline-none focus:border-cyan-100"
+                  />
+                </label>
+
+                <div class="grid gap-3 sm:grid-cols-[6rem_1fr] sm:items-center">
+                  <div class="relative h-24 w-24 overflow-hidden rounded-xl border-2 border-cyan-300 bg-blue-900/80">
+                    <img id="start-avatar-preview" alt="Player avatar preview" class="hidden h-full w-full object-cover" />
+                    <div id="start-avatar-placeholder" class="font-game flex h-full w-full items-center justify-center text-center text-xs leading-5 text-cyan-200">
+                      PNG<br />JPG
+                    </div>
+                  </div>
+                  <div>
+                    <label
+                      for="start-avatar-input"
+                      class="font-game inline-flex cursor-pointer rounded-lg border-2 border-cyan-300 bg-blue-700 px-5 py-3 text-sm text-blue-50 transition hover:bg-blue-600"
+                    >
+                      Upload Avatar
+                    </label>
+                    <input id="start-avatar-input" type="file" accept="image/png,image/jpeg" class="sr-only" />
+                    <p id="start-avatar-feedback" class="mt-2 min-h-5 text-sm font-semibold text-blue-100">
+                      PNG, JPG или JPEG с устройства.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                id="start-button"
+                type="button"
+                class="font-game mt-10 rounded-lg border-2 border-cyan-200 bg-blue-500 px-8 py-4 text-lg text-blue-50 shadow-xl shadow-cyan-950/40 transition hover:bg-blue-400 focus:outline-none focus:ring-4 focus:ring-cyan-200/60"
+              >
+                Click to Start
+              </button>
+            </div>
+
+            <aside class="rounded-lg border-4 border-cyan-300 bg-blue-950/92 p-5 shadow-2xl shadow-blue-950/50">
+              <div class="mb-4 flex items-center justify-between">
+                <h2 class="font-game text-2xl uppercase tracking-[0.12em] text-cyan-200">Leaderboard</h2>
+                <span class="font-game rounded bg-cyan-300 px-2 py-1 text-xs text-blue-950">TOP 5</span>
+              </div>
+              <ol id="start-leaderboard-list" class="space-y-2 text-left"></ol>
+            </aside>
+          </div>
+        </section>
+
+        <section id="hud" class="hidden">
+          <div class="absolute left-3 top-3 rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 shadow-lg backdrop-blur-sm sm:left-6 sm:top-6 sm:px-5 sm:py-3">
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Score</p>
+            <p id="score-value" class="text-2xl font-black tabular-nums text-white sm:text-3xl">0</p>
+          </div>
+
+          <div class="absolute right-3 top-3 rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 shadow-lg backdrop-blur-sm sm:right-6 sm:top-6 sm:px-5 sm:py-3">
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Lives</p>
+            <p id="lives-value" class="text-3xl leading-none" aria-label="3 lives">♥ ♥ ♥</p>
+          </div>
+
+          <div class="absolute left-1/2 top-24 w-[min(760px,calc(100vw-1rem))] -translate-x-1/2 rounded-lg border border-cyan-300/30 bg-slate-950/78 px-4 py-3 text-center shadow-2xl shadow-cyan-950/50 backdrop-blur-md sm:top-6 sm:px-8 sm:py-4">
+            <p class="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">Current Question</p>
+            <p id="question-text" class="text-balance text-base font-bold leading-6 text-white sm:text-2xl sm:leading-9">
+              Вопрос появится после старта.
+            </p>
+          </div>
+          <div class="absolute bottom-3 left-3 flex max-w-[calc(100vw-7rem)] items-center gap-3 rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 shadow-lg backdrop-blur-sm sm:bottom-6 sm:left-6">
+            <div class="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-cyan-300/60 bg-blue-900">
+              <img id="hud-avatar" alt="Player avatar" class="hidden h-full w-full object-cover" />
+              <div id="hud-avatar-placeholder" class="font-game flex h-full w-full items-center justify-center text-xs text-cyan-200">P</div>
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Player</p>
+              <p id="hud-player-name" class="truncate text-base font-black uppercase text-white">PLAYER</p>
+            </div>
+          </div>
+
+          <button
+            id="pause-button"
+            type="button"
+            class="pointer-events-auto font-game absolute bottom-3 right-3 rounded-lg border-2 border-cyan-200 bg-slate-950/78 px-4 py-3 text-sm text-cyan-100 shadow-lg backdrop-blur-sm transition hover:bg-slate-900 sm:bottom-6 sm:right-6"
+          >
+            Pause
+          </button>
+        </section>
+
+        <section
+          id="pause-screen"
+          class="pointer-events-auto absolute inset-0 hidden items-center justify-center bg-slate-950/62 px-4 py-6 backdrop-blur-sm"
+        >
+          <div class="w-[min(420px,calc(100vw-2rem))] rounded-xl border-4 border-cyan-300 bg-blue-950/94 p-6 text-center shadow-2xl shadow-slate-950/50">
+            <p class="font-game mb-3 text-sm uppercase tracking-[0.22em] text-cyan-200">Game Paused</p>
+            <h2 class="font-game text-4xl text-blue-50 sm:text-5xl">Pause</h2>
+            <div class="mt-8 grid gap-3">
+              <button
+                id="resume-button"
+                type="button"
+                class="font-game rounded-lg border-2 border-cyan-200 bg-blue-500 px-6 py-4 text-base text-blue-50 transition hover:bg-blue-400"
+              >
+                Continue
+              </button>
+              <button
+                id="pause-restart-button"
+                type="button"
+                class="font-game rounded-lg border-2 border-blue-200 bg-blue-900 px-6 py-4 text-base text-blue-50 transition hover:bg-blue-800"
+              >
+                Начать заново
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="game-over-screen"
+          class="pointer-events-auto absolute inset-0 hidden items-center justify-center overflow-y-auto bg-sky-500/65 px-4 py-6 backdrop-blur-sm sm:px-6"
+        >
+          <div class="grid w-[min(1040px,calc(100vw-2rem))] gap-6 rounded-xl border-4 border-yellow-300 bg-slate-950/90 p-6 shadow-2xl shadow-slate-900/40 lg:grid-cols-[0.95fr_1.05fr]">
+            <div class="text-center">
+              <p class="mb-3 text-sm font-black uppercase tracking-[0.24em] text-red-300">
+                Run Finished
+              </p>
+              <h2 class="text-5xl font-black leading-tight text-white sm:text-6xl">
+                Game Over
+              </h2>
+              <p class="mt-5 text-lg text-slate-200">
+                Final score:
+                <span id="final-score-value" class="font-black text-yellow-300">0</span>
+              </p>
+
+              <div class="mx-auto mt-6 flex w-full max-w-md items-center gap-4 rounded-xl border border-cyan-300/35 bg-white/8 p-4 text-left">
+                <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border-2 border-cyan-300 bg-blue-900">
+                  <img id="gameover-avatar" alt="Player avatar" class="hidden h-full w-full object-cover" />
+                  <div id="gameover-avatar-placeholder" class="font-game flex h-full w-full items-center justify-center text-2xl text-cyan-200">P</div>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-xs font-black uppercase tracking-[0.18em] text-cyan-300">Player</p>
+                  <p id="gameover-player-name" class="truncate text-2xl font-black uppercase text-white">PLAYER</p>
+                </div>
+              </div>
+
+              <div class="mt-8 rounded-lg border border-white/10 bg-white/8 p-4 text-left">
+                <label for="player-name-input" class="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-cyan-300">
+                  Player Name
+                </label>
+                <div class="flex flex-col gap-3 sm:flex-row">
+                  <input
+                    id="player-name-input"
+                    type="text"
+                    maxlength="18"
+                    autocomplete="nickname"
+                    placeholder="PLAYER"
+                    class="min-w-0 flex-1 rounded-lg border-2 border-cyan-200 bg-white px-4 py-3 text-base font-black uppercase text-slate-950 outline-none focus:border-yellow-300"
+                  />
+                  <button
+                    id="save-score-button"
+                    type="button"
+                    class="rounded-lg bg-yellow-300 px-5 py-3 text-base font-black text-slate-950 transition hover:bg-yellow-200 disabled:cursor-not-allowed disabled:bg-slate-500 disabled:text-slate-300"
+                  >
+                    Save Score
+                  </button>
+                </div>
+                <p id="save-score-feedback" class="mt-3 min-h-5 text-sm font-bold text-slate-300"></p>
+              </div>
+
+              <button
+                id="restart-button"
+                type="button"
+                class="mt-8 rounded-lg bg-white px-8 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:bg-slate-200 focus:outline-none focus:ring-4 focus:ring-white/50"
+              >
+                Начать заново
+              </button>
+            </div>
+
+            <aside class="rounded-lg border-2 border-cyan-300 bg-slate-900/90 p-5">
+              <div class="mb-4 flex items-center justify-between">
+                <h2 class="text-2xl font-black uppercase tracking-[0.12em] text-yellow-300">Leaderboard</h2>
+                <span class="rounded bg-cyan-300 px-2 py-1 text-xs font-black text-slate-950">TOP 5</span>
+              </div>
+              <ol id="gameover-leaderboard-list" class="space-y-2 text-left"></ol>
+
+              <div class="mt-5 border-t border-white/10 pt-5">
+                <div class="mb-3 flex items-center justify-between gap-3">
+                  <h3 class="font-game text-xl uppercase tracking-[0.08em] text-cyan-200">Разбор</h3>
+                  <span class="rounded bg-slate-800 px-2 py-1 text-xs font-black text-slate-200">ANSWERS</span>
+                </div>
+                <ol id="question-review-list" class="max-h-72 space-y-2 overflow-y-auto pr-1 text-left"></ol>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
